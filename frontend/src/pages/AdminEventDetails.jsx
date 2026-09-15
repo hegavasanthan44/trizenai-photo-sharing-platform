@@ -16,7 +16,10 @@ function AdminEventDetails() {
 
   const token = localStorage.getItem("token");
 
-  // Load event details
+  // ============================================
+  // LOAD EVENT
+  // ============================================
+
   const loadEvent = async () => {
     try {
       setLoading(true);
@@ -36,7 +39,10 @@ function AdminEventDetails() {
     }
   };
 
-  // Load photos
+  // ============================================
+  // LOAD PHOTOS
+  // ============================================
+
   const loadPhotos = async () => {
     try {
       setPhotoLoading(true);
@@ -55,13 +61,19 @@ function AdminEventDetails() {
     }
   };
 
-  // Load event and photos when page opens
+  // ============================================
+  // LOAD DATA
+  // ============================================
+
   useEffect(() => {
     loadEvent();
     loadPhotos();
   }, [id]);
 
-  // Add team member
+  // ============================================
+  // ADD TEAM MEMBER
+  // ============================================
+
   const handleAddMember = async (e) => {
     e.preventDefault();
 
@@ -94,7 +106,10 @@ function AdminEventDetails() {
     }
   };
 
-  // Select or unselect photo
+  // ============================================
+  // SELECT / UNSELECT PHOTO
+  // ============================================
+
   const handleSelectPhoto = async (photo) => {
     try {
       setError("");
@@ -115,16 +130,24 @@ function AdminEventDetails() {
     }
   };
 
-  // Loading state
+  // ============================================
+  // LOADING
+  // ============================================
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-gray-600">Loading event...</p>
+        <p className="text-gray-600">
+          Loading event...
+        </p>
       </div>
     );
   }
 
-  // Event not found
+  // ============================================
+  // EVENT NOT FOUND
+  // ============================================
+
   if (!event) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -138,18 +161,32 @@ function AdminEventDetails() {
   return (
     <div className="min-h-screen bg-gray-100">
 
-      {/* Header */}
+      {/* ========================================
+          HEADER
+      ======================================== */}
+
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-6 py-5">
 
-          <Link
-            to="/admin/events"
-            className="text-blue-600 hover:underline text-sm"
-          >
-            ← Back to Events
-          </Link>
+          <div className="flex flex-wrap items-center gap-4">
 
-          <h1 className="text-3xl font-bold text-gray-900 mt-3">
+            <Link
+              to="/admin/events"
+              className="text-blue-600 hover:underline text-sm"
+            >
+              ← Back to Events
+            </Link>
+
+            <Link
+              to={`/admin/events/${id}/gallery`}
+              className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700"
+            >
+              Manage Gallery
+            </Link>
+
+          </div>
+
+          <h1 className="text-3xl font-bold text-gray-900 mt-4">
             {event.name}
           </h1>
 
@@ -160,19 +197,28 @@ function AdminEventDetails() {
         </div>
       </header>
 
+
       <main className="max-w-7xl mx-auto px-6 py-10">
 
-        {/* Error message */}
+        {/* ========================================
+            ERROR MESSAGE
+        ======================================== */}
+
         {error && (
           <div className="mb-6 rounded-lg bg-red-100 border border-red-300 px-4 py-3 text-red-700">
             {error}
           </div>
         )}
 
-        {/* Event + Add Member */}
+
+        {/* ========================================
+            EVENT INFORMATION + ADD MEMBER
+        ======================================== */}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-          {/* Event Information */}
+          {/* EVENT INFORMATION */}
+
           <div className="bg-white rounded-2xl shadow-sm border p-6">
 
             <h2 className="text-xl font-semibold text-gray-900">
@@ -181,7 +227,8 @@ function AdminEventDetails() {
 
             <div className="mt-5 space-y-4">
 
-              {/* Event Name */}
+              {/* EVENT NAME */}
+
               <div>
                 <p className="text-sm text-gray-500">
                   Event Name
@@ -191,13 +238,14 @@ function AdminEventDetails() {
                   {event.name}
                 </p>
 
-                {/* Event ID */}
                 <p className="text-xs text-gray-400 mt-2 break-all">
                   Event ID: {event._id}
                 </p>
               </div>
 
-              {/* Description */}
+
+              {/* DESCRIPTION */}
+
               <div>
                 <p className="text-sm text-gray-500">
                   Description
@@ -208,7 +256,9 @@ function AdminEventDetails() {
                 </p>
               </div>
 
-              {/* Team Members Count */}
+
+              {/* TEAM MEMBER COUNT */}
+
               <div>
                 <p className="text-sm text-gray-500">
                   Team Members
@@ -220,9 +270,12 @@ function AdminEventDetails() {
               </div>
 
             </div>
+
           </div>
 
-          {/* Add Team Member */}
+
+          {/* ADD TEAM MEMBER */}
+
           <div className="bg-white rounded-2xl shadow-sm border p-6">
 
             <h2 className="text-xl font-semibold text-gray-900">
@@ -251,15 +304,22 @@ function AdminEventDetails() {
                 disabled={adding}
                 className="w-full rounded-lg bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >
-                {adding ? "Adding..." : "Add Team Member"}
+                {adding
+                  ? "Adding..."
+                  : "Add Team Member"}
               </button>
 
             </form>
+
           </div>
 
         </div>
 
-        {/* Assigned Team Members */}
+
+        {/* ========================================
+            ASSIGNED TEAM MEMBERS
+        ======================================== */}
+
         <div className="bg-white rounded-2xl shadow-sm border p-6 mt-8">
 
           <h2 className="text-xl font-semibold text-gray-900">
@@ -305,7 +365,11 @@ function AdminEventDetails() {
 
         </div>
 
-        {/* Photo Management */}
+
+        {/* ========================================
+            UPLOADED PHOTOS
+        ======================================== */}
+
         <div className="bg-white rounded-2xl shadow-sm border p-6 mt-8">
 
           <div className="flex items-center justify-between">
@@ -327,7 +391,9 @@ function AdminEventDetails() {
 
           </div>
 
-          {/* Loading photos */}
+
+          {/* PHOTO LOADING */}
+
           {photoLoading ? (
 
             <p className="text-gray-500 mt-6">
@@ -351,27 +417,34 @@ function AdminEventDetails() {
                   className="border rounded-xl overflow-hidden"
                 >
 
-                  {/* Photo */}
+                  {/* PHOTO */}
+
                   <img
                     src={photo.storageUrl}
                     alt={photo.filename}
                     className="w-full h-56 object-cover"
                   />
 
+
                   <div className="p-4">
 
-                    {/* Filename */}
+                    {/* FILENAME */}
+
                     <p className="font-medium text-gray-900 truncate">
                       {photo.filename}
                     </p>
 
-                    {/* Uploaded by */}
+
+                    {/* UPLOADED BY */}
+
                     <p className="text-sm text-gray-500 mt-1">
                       Uploaded by:{" "}
                       {photo.uploadedBy?.name || "Unknown"}
                     </p>
 
-                    {/* Selection status */}
+
+                    {/* SELECT STATUS + BUTTON */}
+
                     <div className="mt-4 flex items-center justify-between">
 
                       <span

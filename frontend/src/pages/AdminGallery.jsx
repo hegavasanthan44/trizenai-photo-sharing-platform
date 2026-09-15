@@ -5,15 +5,22 @@ import { apiRequest } from "../services/api";
 function AdminGallery() {
   const { id } = useParams();
 
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState("");
   const [gallery, setGallery] = useState(null);
   const [pin, setPin] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const token = localStorage.getItem("token");
 
-  // Load existing gallery
+  // ============================================
+  // LOAD GALLERY
+  // ============================================
+
   const loadGallery = async () => {
     try {
       setLoading(true);
@@ -27,7 +34,7 @@ function AdminGallery() {
 
       setGallery(data.gallery);
     } catch (error) {
-      // 404 simply means a gallery has not been created yet
+      // Gallery doesn't exist yet
       if (error.message === "Gallery not found") {
         setGallery(null);
       } else {
@@ -38,11 +45,21 @@ function AdminGallery() {
     }
   };
 
-  // Create gallery
-  const createGallery = async () => {
+  useEffect(() => {
+    loadGallery();
+  }, [id]);
+
+
+  // ============================================
+  // CREATE GALLERY
+  // ============================================
+
+  const handleCreateGallery = async () => {
     try {
       setCreating(true);
       setError("");
+      setSuccess("");
+      setPin("");
 
       const data = await apiRequest(`/gallery/events/${id}`, {
         method: "POST",
@@ -53,63 +70,142 @@ function AdminGallery() {
 
       setGallery(data.gallery);
       setPin(data.pin);
+
+      setSuccess(
+        "Gallery created successfully. Save the PIN because it will only be shown now."
+      );
     } catch (error) {
       setError(error.message);
     } finally {
       setCreating(false);
     }
   };
-  const publishGallery = async () => {
-  try {
-    setError("");
 
-    const data = await apiRequest(
-      `/gallery/${gallery.slug}/publish`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+
+  // ============================================
+  // REGENERATE PIN
+  // ============================================
+
+  const handleRegeneratePin = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to regenerate the gallery PIN?"
     );
 
-    setGallery(data.gallery);
-  } catch (error) {
-    setError(error.message);
-  }
-};
-const regeneratePin = async () => {
-  try {
-    setError("");
+    if (!confirmed) {
+      return;
+    }
 
-    const data = await apiRequest(
-      `/gallery/${gallery.slug}/regenerate-pin`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    try {
+      setRegenerating(true);
+      setError("");
+      setSuccess("");
+
+      const data = await apiRequest(
+        `/gallery/${gallery.slug}/regenerate-pin`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setPin(data.pin);
+
+      setSuccess(
+        "New PIN generated successfully. The previous PIN is no longer valid."
+      );
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+
+  // ============================================
+  // PUBLISH GALLERY
+  // ============================================
+
+  const handlePublishGallery = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to publish this gallery?"
     );
 
-    setPin(data.pin);
-  } catch (error) {
-    setError(error.message);
-  }
-};
+    if (!confirmed) {
+      return;
+    }
 
-  useEffect(() => {
-    loadGallery();
-  }, [id]);
+    try {
+      setPublishing(true);
+      setError("");
+      setSuccess("");
 
-  // Loading
+      const data = await apiRequest(
+        `/gallery/${gallery.slug}/publish`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setGallery(data.gallery);
+
+      setSuccess(
+        "Gallery published successfully."
+      );
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+
+  // ============================================
+  // COPY GALLERY URL
+  // ============================================
+
+  const getGalleryUrl = () => {
+    if (!gallery) {
+      return "";
+    }
+
+    return `${window.location.origin}/gallery/${gallery.slug}`;
+  };
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(getGalleryUrl());
+
+      setSuccess("Gallery URL copied to clipboard.");
+      setError("");
+    } catch (error) {
+      setError("Failed to copy gallery URL.");
+    }
+  };
+
+
+  // ============================================
+  // LOADING
+  // ============================================
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-gray-600">Loading gallery...</p>
+        <p className="text-gray-600">
+          Loading gallery...
+        </p>
       </div>
     );
   }
+
+
+  // ============================================
+  // PAGE
+  // ============================================
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -130,11 +226,12 @@ const regeneratePin = async () => {
           </h1>
 
           <p className="text-gray-600 mt-1">
-            Create and publish the gallery for your customer.
+            Create and publish the customer-facing gallery.
           </p>
 
         </div>
       </header>
+
 
       <main className="max-w-5xl mx-auto px-6 py-10">
 
@@ -145,147 +242,276 @@ const regeneratePin = async () => {
           </div>
         )}
 
+
+        {/* Success */}
+        {success && (
+          <div className="mb-6 rounded-lg bg-green-100 border border-green-300 px-4 py-3 text-green-700">
+            {success}
+          </div>
+        )}
+
+
         {/* No Gallery */}
         {!gallery && (
-          <div className="bg-white rounded-2xl shadow-sm border p-8">
+          <div className="bg-white rounded-2xl shadow-sm border p-8 text-center">
 
-            <h2 className="text-xl font-semibold text-gray-900">
-              Create Customer Gallery
+            <div className="text-5xl mb-4">
+              🖼️
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-900">
+              No Gallery Created
             </h2>
 
-            <p className="text-gray-600 mt-2">
-              The gallery will contain all photos that you selected
-              for this event.
+            <p className="text-gray-600 mt-2 max-w-xl mx-auto">
+              Select photos from the event first. Then create a
+              gallery for the customer.
             </p>
 
             <button
-              onClick={createGallery}
+              onClick={handleCreateGallery}
               disabled={creating}
-              className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+              className="mt-6 px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
             >
-              {creating ? "Creating Gallery..." : "Create Gallery"}
+              {creating
+                ? "Creating Gallery..."
+                : "Create Gallery"}
             </button>
 
           </div>
         )}
 
+
         {/* Gallery Exists */}
         {gallery && (
-          <div className="bg-white rounded-2xl shadow-sm border p-8">
+          <div className="space-y-6">
 
-            <div className="mb-8">
+            {/* Gallery Status */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
 
-              <h2 className="text-2xl font-bold text-gray-900">
-                Gallery Details
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-              <p className="text-gray-600 mt-2">
-                Your gallery has been created successfully.
-              </p>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Gallery Status
+                  </h2>
+
+                  <p className="text-gray-500 mt-1">
+                    Customer gallery information
+                  </p>
+                </div>
+
+                <span
+                  className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold ${
+                    gallery.published
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700"
+                  }`}
+                >
+                  {gallery.published
+                    ? "Published"
+                    : "Not Published"}
+                </span>
+
+              </div>
+
+
+              {/* Gallery Information */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                {/* Gallery Slug */}
+                <div className="border rounded-xl p-4">
+
+                  <p className="text-sm text-gray-500">
+                    Gallery Slug
+                  </p>
+
+                  <p className="font-mono text-gray-900 mt-2 break-all">
+                    {gallery.slug}
+                  </p>
+
+                </div>
+
+
+                {/* Selected Photos */}
+                <div className="border rounded-xl p-4">
+
+                  <p className="text-sm text-gray-500">
+                    Selected Photos
+                  </p>
+
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {gallery.selectedPhotoCount}
+                  </p>
+
+                </div>
+
+              </div>
 
             </div>
 
-            {/* Gallery Slug */}
-            <div className="border rounded-xl p-5 mb-5">
-
-              <p className="text-sm text-gray-500">
-                Gallery Slug
-              </p>
-
-              <p className="font-mono font-semibold text-gray-900 mt-2 break-all">
-                {gallery.slug}
-              </p>
-
-            </div>
 
             {/* Gallery URL */}
-            <div className="border rounded-xl p-5 mb-5">
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
 
-              <p className="text-sm text-gray-500">
-                Gallery URL
+              <h2 className="text-xl font-bold text-gray-900">
+                Gallery Link
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Share this link with the customer.
               </p>
 
-              <p className="font-mono text-blue-600 mt-2 break-all">
-                {window.location.origin.replace(
-                  ":5173",
-                  ":5173"
-                )}/gallery/{gallery.slug}
-              </p>
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+
+                <input
+                  type="text"
+                  readOnly
+                  value={getGalleryUrl()}
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-3 bg-gray-50 text-gray-700"
+                />
+
+                <button
+                  onClick={handleCopyUrl}
+                  className="px-5 py-3 rounded-lg bg-gray-800 text-white font-semibold hover:bg-gray-900"
+                >
+                  Copy Link
+                </button>
+
+              </div>
 
             </div>
+
 
             {/* PIN */}
-            <div className="border rounded-xl p-5 mb-5">
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
 
-  <p className="text-sm text-gray-500">
-    Customer PIN
-  </p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-  {pin ? (
-    <>
-      <p className="text-3xl font-bold tracking-widest text-gray-900 mt-2">
-        {pin}
-      </p>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Gallery PIN
+                  </h2>
 
-      <p className="text-sm text-gray-500 mt-2">
-        Use this PIN to access the customer gallery.
-      </p>
-    </>
-  ) : (
-    <p className="text-gray-500 mt-2">
-      PIN is hidden because it was generated previously.
-    </p>
-  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    Customers need this PIN to access the gallery.
+                  </p>
+                </div>
 
-  <button
-    onClick={regeneratePin}
-    className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700"
-  >
-    Regenerate PIN
-  </button>
+                <button
+                  onClick={handleRegeneratePin}
+                  disabled={regenerating}
+                  className="px-5 py-3 rounded-lg bg-gray-800 text-white font-semibold hover:bg-gray-900 disabled:opacity-50"
+                >
+                  {regenerating
+                    ? "Generating..."
+                    : "Regenerate PIN"}
+                </button>
 
-</div>
+              </div>
 
 
-            {/* Selected Photos */}
-            <div className="border rounded-xl p-5">
+              {pin ? (
 
-              <p className="text-sm text-gray-500">
-                Selected Photos
-              </p>
+                <div className="mt-6">
 
-              <p className="text-2xl font-bold text-gray-900 mt-2">
-                {gallery.selectedPhotoCount}
-              </p>
+                  <div className="rounded-xl bg-blue-50 border border-blue-200 p-6 text-center">
+
+                    <p className="text-sm text-blue-600 font-semibold">
+                      New Gallery PIN
+                    </p>
+
+                    <p className="text-4xl font-bold tracking-[0.5em] text-blue-900 mt-3">
+                      {pin}
+                    </p>
+
+                    <p className="text-xs text-blue-600 mt-4">
+                      Save this PIN. It is shown only when created or regenerated.
+                    </p>
+
+                  </div>
+
+                </div>
+
+              ) : (
+
+                <div className="mt-5 rounded-lg bg-gray-50 border p-4">
+
+                  <p className="text-sm text-gray-600">
+                    The PIN is securely stored and cannot be displayed again.
+                  </p>
+
+                  <p className="text-sm text-gray-600 mt-1">
+                    Use <strong>Regenerate PIN</strong> to create a new PIN.
+                  </p>
+
+                </div>
+
+              )}
 
             </div>
 
-            {/* Publish Status */}
 
-<div className="mt-6 flex items-center gap-4">
+            {/* Publish */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
 
-  <span
-    className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold ${
-      gallery.published
-        ? "bg-green-100 text-green-700"
-        : "bg-yellow-100 text-yellow-700"
-    }`}
-  >
-    {gallery.published
-      ? "Published"
-      : "Not Published"}
-  </span>
+              <h2 className="text-xl font-bold text-gray-900">
+                Publish Gallery
+              </h2>
 
-  {!gallery.published && (
-    <button
-      onClick={publishGallery}
-      className="bg-green-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-green-700"
-    >
-      Publish Gallery
-    </button>
-  )}
+              <p className="text-sm text-gray-500 mt-1">
+                Publishing makes the selected photos available through
+                the customer gallery link after PIN verification.
+              </p>
 
-</div>
+
+              {!gallery.published ? (
+
+                <button
+                  onClick={handlePublishGallery}
+                  disabled={publishing}
+                  className="mt-6 w-full sm:w-auto px-6 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-50"
+                >
+                  {publishing
+                    ? "Publishing..."
+                    : "Publish Gallery"}
+                </button>
+
+              ) : (
+
+                <div className="mt-6">
+
+                  <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+
+                    <p className="font-semibold text-green-700">
+                      ✓ Gallery is published
+                    </p>
+
+                    {gallery.publishedAt && (
+                      <p className="text-sm text-green-600 mt-1">
+                        Published on:{" "}
+                        {new Date(
+                          gallery.publishedAt
+                        ).toLocaleString()}
+                      </p>
+                    )}
+
+                  </div>
+
+                  <Link
+                    to={`/gallery/${gallery.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-4 px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                  >
+                    Open Customer Gallery
+                  </Link>
+
+                </div>
+
+              )}
+
+            </div>
 
           </div>
         )}
