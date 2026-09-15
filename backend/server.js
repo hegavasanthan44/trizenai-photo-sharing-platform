@@ -9,6 +9,7 @@ const healthRoutes = require("./src/routes/healthRoutes");
 const authRoutes = require("./src/routes/authRoutes");
 const eventRoutes = require("./src/routes/eventRoutes");
 const photoRoutes = require("./src/routes/photoRoutes");
+const galleryRoutes = require("./src/routes/galleryRoutes");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/events", eventRoutes);
 app.use("/api/photos", photoRoutes);
+app.use("/api/gallery", galleryRoutes);
 
 app.get("/", (req, res) => {
   res.json({
