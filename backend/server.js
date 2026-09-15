@@ -13,23 +13,12 @@ const photoRoutes = require("./src/routes/photoRoutes");
 const galleryRoutes = require("./src/routes/galleryRoutes");
 
 const app = express();
-
 const PORT = process.env.PORT || 5000;
-
-
-// =====================================================
-// DNS CONFIGURATION
-// =====================================================
 
 dns.setServers([
   "8.8.8.8",
   "8.8.4.4",
 ]);
-
-
-// =====================================================
-// CORS CONFIGURATION
-// =====================================================
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -39,36 +28,20 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-
-      // Allow requests without an Origin header.
-      // Useful for tools such as Postman.
       if (!origin) {
         return callback(null, true);
       }
 
-      // Allow only configured frontend origins.
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(
-        new Error("Not allowed by CORS")
-      );
+      return callback(new Error("Not allowed by CORS"));
     },
   })
 );
 
-
-// =====================================================
-// BODY PARSER
-// =====================================================
-
 app.use(express.json());
-
-
-// =====================================================
-// ROOT ROUTE
-// =====================================================
 
 app.get("/", (req, res) => {
   res.json({
@@ -77,30 +50,15 @@ app.get("/", (req, res) => {
   });
 });
 
-
-// =====================================================
-// API ROUTES
-// =====================================================
-
 app.use("/api/health", healthRoutes);
-
 app.use("/api/auth", authRoutes);
-
 app.use("/api/events", eventRoutes);
-
 app.use("/api/photos", photoRoutes);
-
 app.use("/api/gallery", galleryRoutes);
-
-
-// =====================================================
-// GLOBAL ERROR HANDLER
-// =====================================================
 
 app.use((error, req, res, next) => {
   console.error("Server error:", error.message);
 
-  // CORS error
   if (error.message === "Not allowed by CORS") {
     return res.status(403).json({
       success: false,
@@ -114,14 +72,8 @@ app.use((error, req, res, next) => {
   });
 });
 
-
-// =====================================================
-// START SERVER
-// =====================================================
-
 const startServer = async () => {
   try {
-
     await connectDatabase();
 
     app.listen(PORT, () => {
@@ -129,9 +81,7 @@ const startServer = async () => {
         `Server running on http://localhost:${PORT}`
       );
     });
-
   } catch (error) {
-
     console.error(
       "Failed to start server:",
       error.message
@@ -141,5 +91,11 @@ const startServer = async () => {
   }
 };
 
+// Start the server only when running:
+// npm start
+if (require.main === module) {
+  startServer();
+}
 
-startServer();
+// Export Express app for Jest/Supertest
+module.exports = app;
