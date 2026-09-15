@@ -4,6 +4,8 @@ const Photo = require("../models/Photo");
 const Event = require("../models/Event");
 const cloudinary = require("../config/cloudinary");
 
+
+// Upload a photo
 const uploadPhoto = async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -83,7 +85,9 @@ const uploadPhoto = async (req, res) => {
   }
 };
 
+
 // Get all photos for an event
+// Admin only
 const getEventPhotos = async (req, res) => {
   try {
     const { eventId } = req.params;
@@ -127,7 +131,31 @@ const getEventPhotos = async (req, res) => {
 };
 
 
+// Get photos uploaded by the logged-in team member
+const getMyPhotos = async (req, res) => {
+  try {
+    const photos = await Photo.find({
+      uploadedBy: req.user.userId,
+    })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      photos,
+    });
+  } catch (error) {
+    console.error("Get my photos error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to get your photos",
+    });
+  }
+};
+
+
 // Select or unselect a photo
+// Admin only
 const selectPhoto = async (req, res) => {
   try {
     const { photoId } = req.params;
@@ -194,5 +222,6 @@ const selectPhoto = async (req, res) => {
 module.exports = {
   uploadPhoto,
   getEventPhotos,
+  getMyPhotos,
   selectPhoto,
 };

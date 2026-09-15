@@ -3,6 +3,7 @@ const express = require("express");
 const {
   uploadPhoto,
   getEventPhotos,
+  getMyPhotos,
   selectPhoto,
 } = require("../controllers/photoController");
 
@@ -11,7 +12,6 @@ const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
-// Upload a photo to an event
 router.post(
   "/events/:eventId",
   protect,
@@ -19,14 +19,18 @@ router.post(
   uploadPhoto
 );
 
-// Get all photos for an event
 router.get(
   "/events/:eventId",
   protect,
   getEventPhotos
 );
 
-// Select or unselect a photo
+router.get(
+  "/my",
+  protect,
+  getMyPhotos
+);
+
 router.patch(
   "/:photoId/select",
   protect,

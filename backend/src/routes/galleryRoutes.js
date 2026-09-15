@@ -3,10 +3,10 @@ const express = require("express");
 const {
   createGallery,
   getGalleryByEvent,
+  regenerateGalleryPin,
   publishGallery,
   verifyGalleryPin,
 } = require("../controllers/galleryController");
-
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -16,6 +16,12 @@ router.post(
   "/events/:eventId",
   protect,
   createGallery
+);
+
+router.patch(
+  "/:slug/regenerate-pin",
+  protect,
+  regenerateGalleryPin
 );
 
 // Publish a gallery
@@ -36,5 +42,6 @@ router.get(
   protect,
   getGalleryByEvent
 );
+
 
 module.exports = router;    

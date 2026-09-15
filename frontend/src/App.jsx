@@ -7,6 +7,11 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminEvents from "./pages/AdminEvents";
 import AdminEventDetails from "./pages/AdminEventDetails";
 import AdminGallery from "./pages/AdminGallery";
+import CustomerGallery from "./pages/CustomerGallery";
+import TeamEventDetails from "./pages/TeamEventDetails";
+
+
+import TeamDashboard from "./pages/TeamDashboard";
 function App() {
   return (
     <BrowserRouter>
@@ -30,6 +35,18 @@ function App() {
         <Route
           path="/admin/events/:id/gallery"
           element={<AdminGallery />}
+        />
+        <Route
+          path="/gallery/:slug"
+          element={<CustomerGallery />}
+        />
+        <Route
+          path="/team/dashboard"
+          element={<TeamDashboard />}
+        />
+        <Route
+          path="/team/events/:id"
+          element={<TeamEventDetails />}
         />
         
       </Routes>

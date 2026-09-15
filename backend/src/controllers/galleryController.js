@@ -269,9 +269,72 @@ const getGalleryByEvent = async (req, res) => {
   }
 };
 
+const regenerateGalleryPin = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const gallery = await Gallery.findOne({ slug });
+
+    if (!gallery) {
+      return res.status(404).json({
+        success: false,
+        message: "Gallery not found",
+      });
+    }
+
+    const event = await Event.findById(gallery.eventId);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    if (
+      req.user.role !== "admin" ||
+      event.createdBy.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Only the event admin can regenerate the PIN",
+      });
+    }
+
+    // Generate a new 6-digit PIN
+    const pin = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+
+    // Hash the new PIN before storing it
+    const pinHash = await bcrypt.hash(pin, 10);
+
+    gallery.pinHash = pinHash;
+
+    await gallery.save();
+
+    res.json({
+      success: true,
+      message: "Gallery PIN regenerated successfully",
+      pin,
+    });
+  } catch (error) {
+    console.error(
+      "Regenerate gallery PIN error:",
+      error.message
+    );
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to regenerate gallery PIN",
+    });
+  }
+};
+
 module.exports = {
   createGallery,
+  getGalleryByEvent,
+  regenerateGalleryPin,
   publishGallery,
   verifyGalleryPin,
-  getGalleryByEvent,
 };

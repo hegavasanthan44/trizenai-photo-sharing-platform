@@ -78,6 +78,25 @@ function AdminGallery() {
     setError(error.message);
   }
 };
+const regeneratePin = async () => {
+  try {
+    setError("");
+
+    const data = await apiRequest(
+      `/gallery/${gallery.slug}/regenerate-pin`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    setPin(data.pin);
+  } catch (error) {
+    setError(error.message);
+  }
+};
 
   useEffect(() => {
     loadGallery();
@@ -196,24 +215,37 @@ function AdminGallery() {
             </div>
 
             {/* PIN */}
-            {pin && (
-              <div className="border rounded-xl p-5 mb-5">
+            <div className="border rounded-xl p-5 mb-5">
 
-                <p className="text-sm text-gray-500">
-                  Customer PIN
-                </p>
+  <p className="text-sm text-gray-500">
+    Customer PIN
+  </p>
 
-                <p className="text-3xl font-bold tracking-widest text-gray-900 mt-2">
-                  {pin}
-                </p>
+  {pin ? (
+    <>
+      <p className="text-3xl font-bold tracking-widest text-gray-900 mt-2">
+        {pin}
+      </p>
 
-                <p className="text-sm text-gray-500 mt-2">
-                  Save this PIN. It is shown only when the gallery
-                  is created.
-                </p>
+      <p className="text-sm text-gray-500 mt-2">
+        Use this PIN to access the customer gallery.
+      </p>
+    </>
+  ) : (
+    <p className="text-gray-500 mt-2">
+      PIN is hidden because it was generated previously.
+    </p>
+  )}
 
-              </div>
-            )}
+  <button
+    onClick={regeneratePin}
+    className="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700"
+  >
+    Regenerate PIN
+  </button>
+
+</div>
+
 
             {/* Selected Photos */}
             <div className="border rounded-xl p-5">
