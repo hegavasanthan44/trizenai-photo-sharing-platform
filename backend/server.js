@@ -7,6 +7,7 @@ const dns = require("dns");
 const connectDatabase = require("./src/config/database");
 const healthRoutes = require("./src/routes/healthRoutes");
 const authRoutes = require("./src/routes/authRoutes");
+const eventRoutes = require("./src/routes/eventRoutes");
 
 const app = express();
 
@@ -17,6 +18,7 @@ dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 app.use(cors());
 app.use(express.json());
+app.use("/api/events", eventRoutes);
 
 app.get("/", (req, res) => {
   res.json({
