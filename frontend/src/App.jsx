@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminEvents from "./pages/AdminEvents";
+import AdminEventDetails from "./pages/AdminEventDetails";
 
 function App() {
   return (
@@ -21,6 +22,10 @@ function App() {
         <Route
           path="/admin/events"
           element={<AdminEvents />}
+        />
+        <Route
+          path="/admin/events/:id"
+          element={<AdminEventDetails />}
         />
         
       </Routes>
