@@ -5,7 +5,8 @@ const User = require("../models/User");
 
 const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, adminInviteCode } = req.body;
+
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -13,6 +14,17 @@ const register = async (req, res) => {
         message: "Name, email and password are required",
       });
     }
+    if (role === "admin") {
+  if (
+    !adminInviteCode ||
+    adminInviteCode !== process.env.ADMIN_INVITE_CODE
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: "Valid admin invite code is required",
+    });
+  }
+}
 
     const existingUser = await User.findOne({ email });
 
