@@ -83,6 +83,116 @@ const uploadPhoto = async (req, res) => {
   }
 };
 
+// Get all photos for an event
+const getEventPhotos = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const event = await Event.findById(eventId);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    // Only the admin who created the event can view all photos
+    if (
+      req.user.role !== "admin" ||
+      event.createdBy.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to view these photos",
+      });
+    }
+
+    const photos = await Photo.find({ eventId })
+      .populate("uploadedBy", "name email")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      photos,
+    });
+  } catch (error) {
+    console.error("Get event photos error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to get event photos",
+    });
+  }
+};
+
+
+// Select or unselect a photo
+const selectPhoto = async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    const { selected } = req.body;
+
+    if (typeof selected !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "Selected must be true or false",
+      });
+    }
+
+    const photo = await Photo.findById(photoId);
+
+    if (!photo) {
+      return res.status(404).json({
+        success: false,
+        message: "Photo not found",
+      });
+    }
+
+    const event = await Event.findById(photo.eventId);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    // Only the admin who created the event can select photos
+    if (
+      req.user.role !== "admin" ||
+      event.createdBy.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Only the event admin can select photos",
+      });
+    }
+
+    photo.selected = selected;
+
+    await photo.save();
+
+    res.json({
+      success: true,
+      message: selected
+        ? "Photo selected successfully"
+        : "Photo unselected successfully",
+      photo,
+    });
+  } catch (error) {
+    console.error("Select photo error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update photo selection",
+    });
+  }
+};
+
+
 module.exports = {
   uploadPhoto,
+  getEventPhotos,
+  selectPhoto,
 };

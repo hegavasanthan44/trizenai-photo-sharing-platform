@@ -1,6 +1,10 @@
 const express = require("express");
 
-const { uploadPhoto } = require("../controllers/photoController");
+const {
+  uploadPhoto,
+  getEventPhotos,
+  selectPhoto,
+} = require("../controllers/photoController");
 
 const protect = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
@@ -13,6 +17,20 @@ router.post(
   protect,
   upload.single("photo"),
   uploadPhoto
+);
+
+// Get all photos for an event
+router.get(
+  "/events/:eventId",
+  protect,
+  getEventPhotos
+);
+
+// Select or unselect a photo
+router.patch(
+  "/:photoId/select",
+  protect,
+  selectPhoto
 );
 
 module.exports = router;
