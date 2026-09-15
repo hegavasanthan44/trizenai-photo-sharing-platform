@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
   createGallery,
+  getGalleryByEvent,
   publishGallery,
   verifyGalleryPin,
 } = require("../controllers/galleryController");
@@ -28,6 +29,12 @@ router.patch(
 router.post(
   "/:slug/verify",
   verifyGalleryPin
+);
+
+router.get(
+  "/events/:eventId",
+  protect,
+  getGalleryByEvent
 );
 
 module.exports = router;    

@@ -28,6 +28,14 @@ const createGallery = async (req, res) => {
         message: "Only the event admin can create a gallery",
       });
     }
+    const existingGallery = await Gallery.findOne({ eventId });
+
+        if (existingGallery) {
+            return res.status(400).json({
+                success: false,
+                message: "A gallery already exists for this event",
+            });
+        }
 
     // Get selected photos
     const selectedPhotos = await Photo.find({
@@ -208,8 +216,62 @@ const verifyGalleryPin = async (req, res) => {
   }
 };
 
+const getGalleryByEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const event = await Event.findById(eventId);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    if (
+      req.user.role !== "admin" ||
+      event.createdBy.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Only the event admin can view this gallery",
+      });
+    }
+
+    const gallery = await Gallery.findOne({ eventId });
+
+    if (!gallery) {
+      return res.status(404).json({
+        success: false,
+        message: "Gallery not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      gallery: {
+        id: gallery._id,
+        eventId: gallery.eventId,
+        slug: gallery.slug,
+        selectedPhotoCount: gallery.selectedPhotos.length,
+        published: gallery.published,
+        publishedAt: gallery.publishedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Get gallery error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to get gallery",
+    });
+  }
+};
+
 module.exports = {
   createGallery,
   publishGallery,
   verifyGalleryPin,
+  getGalleryByEvent,
 };

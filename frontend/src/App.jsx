@@ -6,7 +6,7 @@ import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminEvents from "./pages/AdminEvents";
 import AdminEventDetails from "./pages/AdminEventDetails";
-
+import AdminGallery from "./pages/AdminGallery";
 function App() {
   return (
     <BrowserRouter>
@@ -26,6 +26,10 @@ function App() {
         <Route
           path="/admin/events/:id"
           element={<AdminEventDetails />}
+        />
+        <Route
+          path="/admin/events/:id/gallery"
+          element={<AdminGallery />}
         />
         
       </Routes>
