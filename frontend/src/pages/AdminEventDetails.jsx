@@ -94,6 +94,27 @@ function AdminEventDetails() {
     }
   };
 
+  // Select or unselect photo
+  const handleSelectPhoto = async (photo) => {
+    try {
+      setError("");
+
+      await apiRequest(`/photos/${photo._id}/select`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          selected: !photo.selected,
+        }),
+      });
+
+      await loadPhotos();
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -160,6 +181,7 @@ function AdminEventDetails() {
 
             <div className="mt-5 space-y-4">
 
+              {/* Event Name */}
               <div>
                 <p className="text-sm text-gray-500">
                   Event Name
@@ -168,8 +190,14 @@ function AdminEventDetails() {
                 <p className="font-medium text-gray-900 mt-1">
                   {event.name}
                 </p>
+
+                {/* Event ID */}
+                <p className="text-xs text-gray-400 mt-2 break-all">
+                  Event ID: {event._id}
+                </p>
               </div>
 
+              {/* Description */}
               <div>
                 <p className="text-sm text-gray-500">
                   Description
@@ -180,6 +208,7 @@ function AdminEventDetails() {
                 </p>
               </div>
 
+              {/* Team Members Count */}
               <div>
                 <p className="text-sm text-gray-500">
                   Team Members
@@ -282,7 +311,6 @@ function AdminEventDetails() {
           <div className="flex items-center justify-between">
 
             <div>
-
               <h2 className="text-xl font-semibold text-gray-900">
                 Uploaded Photos
               </h2>
@@ -290,7 +318,6 @@ function AdminEventDetails() {
               <p className="text-sm text-gray-500 mt-1">
                 Review and select photos for the customer gallery.
               </p>
-
             </div>
 
             <span className="text-sm text-gray-500">
@@ -358,34 +385,19 @@ function AdminEventDetails() {
                           ? "Selected"
                           : "Not selected"}
                       </span>
+
                       <button
-    onClick={async () => {
-      try {
-        setError("");
-
-        await apiRequest(`/photos/${photo._id}/select`, {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            selected: !photo.selected,
-          }),
-        });
-
-        await loadPhotos();
-      } catch (error) {
-        setError(error.message);
-      }
-    }}
-    className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${
-      photo.selected
-        ? "bg-gray-600 hover:bg-gray-700"
-        : "bg-green-600 hover:bg-green-700"
-    }`}
-  >
-    {photo.selected ? "Unselect" : "Select"}
-  </button>
+                        onClick={() => handleSelectPhoto(photo)}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${
+                          photo.selected
+                            ? "bg-gray-600 hover:bg-gray-700"
+                            : "bg-green-600 hover:bg-green-700"
+                        }`}
+                      >
+                        {photo.selected
+                          ? "Unselect"
+                          : "Select"}
+                      </button>
 
                     </div>
 
