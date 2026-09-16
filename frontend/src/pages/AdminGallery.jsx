@@ -11,6 +11,7 @@ function AdminGallery() {
   const [creating, setCreating] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -34,7 +35,6 @@ function AdminGallery() {
 
       setGallery(data.gallery);
     } catch (error) {
-      // Gallery doesn't exist yet
       if (error.message === "Gallery not found") {
         setGallery(null);
       } else {
@@ -48,7 +48,6 @@ function AdminGallery() {
   useEffect(() => {
     loadGallery();
   }, [id]);
-
 
   // ============================================
   // CREATE GALLERY
@@ -81,6 +80,51 @@ function AdminGallery() {
     }
   };
 
+  // ============================================
+  // UPDATE GALLERY
+  // ============================================
+
+  const handleUpdateGallery = async () => {
+    if (!gallery) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Update this gallery with the photos currently selected for the event?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      setError("");
+      setSuccess("");
+
+      const data = await apiRequest(
+        `/gallery/${gallery.slug}/update`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setGallery(data.gallery);
+
+      setSuccess(
+        gallery.published
+          ? "Published gallery updated successfully."
+          : "Gallery updated successfully."
+      );
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   // ============================================
   // REGENERATE PIN
@@ -122,7 +166,6 @@ function AdminGallery() {
     }
   };
 
-
   // ============================================
   // PUBLISH GALLERY
   // ============================================
@@ -153,16 +196,13 @@ function AdminGallery() {
 
       setGallery(data.gallery);
 
-      setSuccess(
-        "Gallery published successfully."
-      );
+      setSuccess("Gallery published successfully.");
     } catch (error) {
       setError(error.message);
     } finally {
       setPublishing(false);
     }
   };
-
 
   // ============================================
   // COPY GALLERY URL
@@ -187,7 +227,6 @@ function AdminGallery() {
     }
   };
 
-
   // ============================================
   // LOADING
   // ============================================
@@ -201,7 +240,6 @@ function AdminGallery() {
       </div>
     );
   }
-
 
   // ============================================
   // PAGE
@@ -232,7 +270,6 @@ function AdminGallery() {
         </div>
       </header>
 
-
       <main className="max-w-5xl mx-auto px-6 py-10">
 
         {/* Error */}
@@ -242,14 +279,12 @@ function AdminGallery() {
           </div>
         )}
 
-
         {/* Success */}
         {success && (
           <div className="mb-6 rounded-lg bg-green-100 border border-green-300 px-4 py-3 text-green-700">
             {success}
           </div>
         )}
-
 
         {/* No Gallery */}
         {!gallery && (
@@ -280,7 +315,6 @@ function AdminGallery() {
 
           </div>
         )}
-
 
         {/* Gallery Exists */}
         {gallery && (
@@ -315,7 +349,6 @@ function AdminGallery() {
 
               </div>
 
-
               {/* Gallery Information */}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5">
 
@@ -331,7 +364,6 @@ function AdminGallery() {
                   </p>
 
                 </div>
-
 
                 {/* Selected Photos */}
                 <div className="border rounded-xl p-4">
@@ -350,6 +382,29 @@ function AdminGallery() {
 
             </div>
 
+            {/* UPDATE GALLERY */}
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+
+              <h2 className="text-xl font-bold text-gray-900">
+                Update Gallery Photos
+              </h2>
+
+              <p className="text-sm text-gray-500 mt-1">
+                Select or unselect photos from the event, then update
+                this gallery to synchronize the customer-facing photos.
+              </p>
+
+              <button
+                onClick={handleUpdateGallery}
+                disabled={updating}
+                className="mt-5 w-full sm:w-auto px-6 py-3 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50"
+              >
+                {updating
+                  ? "Updating Gallery..."
+                  : "Update Gallery"}
+              </button>
+
+            </div>
 
             {/* Gallery URL */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
@@ -382,7 +437,6 @@ function AdminGallery() {
 
             </div>
 
-
             {/* PIN */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
 
@@ -409,7 +463,6 @@ function AdminGallery() {
                 </button>
 
               </div>
-
 
               {pin ? (
 
@@ -451,7 +504,6 @@ function AdminGallery() {
 
             </div>
 
-
             {/* Publish */}
             <div className="bg-white rounded-2xl shadow-sm border p-6">
 
@@ -463,7 +515,6 @@ function AdminGallery() {
                 Publishing makes the selected photos available through
                 the customer gallery link after PIN verification.
               </p>
-
 
               {!gallery.published ? (
 

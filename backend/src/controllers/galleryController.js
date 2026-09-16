@@ -5,7 +5,6 @@ const Gallery = require("../models/Gallery");
 const Event = require("../models/Event");
 const Photo = require("../models/Photo");
 
-
 // =====================================================
 // CREATE GALLERY
 // =====================================================
@@ -23,7 +22,6 @@ const createGallery = async (req, res) => {
       });
     }
 
-    // Only event admin can create gallery
     if (
       req.user.role !== "admin" ||
       event.createdBy.toString() !== req.user.userId
@@ -34,7 +32,6 @@ const createGallery = async (req, res) => {
       });
     }
 
-    // Check existing gallery
     const existingGallery = await Gallery.findOne({
       eventId,
     });
@@ -46,7 +43,6 @@ const createGallery = async (req, res) => {
       });
     }
 
-    // Get selected photos
     const selectedPhotos = await Photo.find({
       eventId,
       selected: true,
@@ -59,15 +55,12 @@ const createGallery = async (req, res) => {
       });
     }
 
-    // Generate unique gallery slug
     const slug = crypto.randomBytes(6).toString("hex");
 
-    // Generate secure 6-digit PIN
     const pin = crypto
       .randomInt(100000, 1000000)
       .toString();
 
-    // Hash PIN
     const pinHash = await bcrypt.hash(pin, 10);
 
     const gallery = await Gallery.create({
@@ -92,15 +85,10 @@ const createGallery = async (req, res) => {
         published: gallery.published,
       },
 
-      // Show PIN only when gallery is created
       pin,
     });
-
   } catch (error) {
-    console.error(
-      "Create gallery error:",
-      error
-    );
+    console.error("Create gallery error:", error);
 
     res.status(500).json({
       success: false,
@@ -108,7 +96,6 @@ const createGallery = async (req, res) => {
     });
   }
 };
-
 
 // =====================================================
 // GET GALLERY BY EVENT
@@ -127,7 +114,6 @@ const getGalleryByEvent = async (req, res) => {
       });
     }
 
-    // Only event admin can view gallery management
     if (
       req.user.role !== "admin" ||
       event.createdBy.toString() !== req.user.userId
@@ -162,12 +148,8 @@ const getGalleryByEvent = async (req, res) => {
         publishedAt: gallery.publishedAt,
       },
     });
-
   } catch (error) {
-    console.error(
-      "Get gallery error:",
-      error
-    );
+    console.error("Get gallery error:", error);
 
     res.status(500).json({
       success: false,
@@ -176,6 +158,93 @@ const getGalleryByEvent = async (req, res) => {
   }
 };
 
+// =====================================================
+// UPDATE EXISTING GALLERY
+// =====================================================
+
+const updateGallery = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const gallery = await Gallery.findOne({
+      slug,
+    });
+
+    if (!gallery) {
+      return res.status(404).json({
+        success: false,
+        message: "Gallery not found",
+      });
+    }
+
+    const event = await Event.findById(
+      gallery.eventId
+    );
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    // Only event admin can update gallery
+    if (
+      req.user.role !== "admin" ||
+      event.createdBy.toString() !== req.user.userId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Only the event admin can update this gallery",
+      });
+    }
+
+    // Get the current selected photos for the event
+    const selectedPhotos = await Photo.find({
+      eventId: gallery.eventId,
+      selected: true,
+    });
+
+    if (selectedPhotos.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select at least one photo",
+      });
+    }
+
+    // Replace gallery photos with current selections
+    gallery.selectedPhotos = selectedPhotos.map(
+      (photo) => photo._id
+    );
+
+    await gallery.save();
+
+    res.json({
+      success: true,
+      message: gallery.published
+        ? "Published gallery updated successfully"
+        : "Gallery updated successfully",
+
+      gallery: {
+        id: gallery._id,
+        eventId: gallery.eventId,
+        slug: gallery.slug,
+        selectedPhotoCount:
+          gallery.selectedPhotos.length,
+        published: gallery.published,
+        publishedAt: gallery.publishedAt,
+      },
+    });
+  } catch (error) {
+    console.error("Update gallery error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update gallery",
+    });
+  }
+};
 
 // =====================================================
 // REGENERATE GALLERY PIN
@@ -207,7 +276,6 @@ const regenerateGalleryPin = async (req, res) => {
       });
     }
 
-    // Only event admin can regenerate PIN
     if (
       req.user.role !== "admin" ||
       event.createdBy.toString() !== req.user.userId
@@ -219,7 +287,6 @@ const regenerateGalleryPin = async (req, res) => {
       });
     }
 
-    // Generate secure PIN
     const pin = crypto
       .randomInt(100000, 1000000)
       .toString();
@@ -236,7 +303,6 @@ const regenerateGalleryPin = async (req, res) => {
         "Gallery PIN regenerated successfully",
       pin,
     });
-
   } catch (error) {
     console.error(
       "Regenerate gallery PIN error:",
@@ -250,7 +316,6 @@ const regenerateGalleryPin = async (req, res) => {
     });
   }
 };
-
 
 // =====================================================
 // PUBLISH GALLERY
@@ -282,7 +347,6 @@ const publishGallery = async (req, res) => {
       });
     }
 
-    // Only event admin can publish
     if (
       req.user.role !== "admin" ||
       event.createdBy.toString() !== req.user.userId
@@ -318,7 +382,6 @@ const publishGallery = async (req, res) => {
         publishedAt: gallery.publishedAt,
       },
     });
-
   } catch (error) {
     console.error(
       "Publish gallery error:",
@@ -333,7 +396,6 @@ const publishGallery = async (req, res) => {
   }
 };
 
-
 // =====================================================
 // VERIFY GALLERY PIN
 // =====================================================
@@ -343,7 +405,6 @@ const verifyGalleryPin = async (req, res) => {
     const { slug } = req.params;
     const { pin } = req.body;
 
-    // Validate PIN
     if (!pin) {
       return res.status(400).json({
         success: false,
@@ -358,7 +419,6 @@ const verifyGalleryPin = async (req, res) => {
       });
     }
 
-    // Find gallery
     const gallery = await Gallery.findOne({
       slug,
     });
@@ -370,7 +430,6 @@ const verifyGalleryPin = async (req, res) => {
       });
     }
 
-    // Gallery must be published
     if (!gallery.published) {
       return res.status(403).json({
         success: false,
@@ -378,7 +437,6 @@ const verifyGalleryPin = async (req, res) => {
       });
     }
 
-    // Verify PIN
     const pinMatch = await bcrypt.compare(
       pin,
       gallery.pinHash
@@ -391,10 +449,6 @@ const verifyGalleryPin = async (req, res) => {
       });
     }
 
-    // =================================================
-    // GET ONLY SELECTED PHOTOS
-    // =================================================
-
     const photos = await Photo.find({
       _id: {
         $in: gallery.selectedPhotos,
@@ -404,8 +458,6 @@ const verifyGalleryPin = async (req, res) => {
       "filename storageUrl fileSize createdAt"
     );
 
-    // Return Cloudinary URL
-    // This is the URL that was already working
     res.json({
       success: true,
       message: "PIN verified successfully",
@@ -416,7 +468,6 @@ const verifyGalleryPin = async (req, res) => {
         photos,
       },
     });
-
   } catch (error) {
     console.error(
       "Verify gallery PIN error:",
@@ -431,7 +482,6 @@ const verifyGalleryPin = async (req, res) => {
   }
 };
 
-
 // =====================================================
 // EXPORT
 // =====================================================
@@ -439,6 +489,7 @@ const verifyGalleryPin = async (req, res) => {
 module.exports = {
   createGallery,
   getGalleryByEvent,
+  updateGallery,
   regenerateGalleryPin,
   publishGallery,
   verifyGalleryPin,

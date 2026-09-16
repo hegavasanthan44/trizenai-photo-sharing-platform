@@ -8,11 +8,16 @@ function AdminEventDetails() {
   const [event, setEvent] = useState(null);
   const [userId, setUserId] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
   const [photos, setPhotos] = useState([]);
   const [photoLoading, setPhotoLoading] = useState(false);
+
+  const [gallery, setGallery] = useState(null);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [updatingGallery, setUpdatingGallery] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -62,12 +67,40 @@ function AdminEventDetails() {
   };
 
   // ============================================
+  // LOAD GALLERY
+  // ============================================
+
+  const loadGallery = async () => {
+    try {
+      setGalleryLoading(true);
+
+      const data = await apiRequest(`/gallery/events/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setGallery(data.gallery);
+    } catch (error) {
+      // Gallery may not exist yet
+      if (error.message === "Gallery not found") {
+        setGallery(null);
+      } else {
+        setError(error.message);
+      }
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
+
+  // ============================================
   // LOAD DATA
   // ============================================
 
   useEffect(() => {
     loadEvent();
     loadPhotos();
+    loadGallery();
   }, [id]);
 
   // ============================================
@@ -85,6 +118,7 @@ function AdminEventDetails() {
     try {
       setAdding(true);
       setError("");
+      setSuccess("");
 
       await apiRequest(`/events/${id}/members`, {
         method: "POST",
@@ -97,6 +131,7 @@ function AdminEventDetails() {
       });
 
       setUserId("");
+      setSuccess("Team member added successfully.");
 
       await loadEvent();
     } catch (error) {
@@ -113,6 +148,7 @@ function AdminEventDetails() {
   const handleSelectPhoto = async (photo) => {
     try {
       setError("");
+      setSuccess("");
 
       await apiRequest(`/photos/${photo._id}/select`, {
         method: "PATCH",
@@ -125,8 +161,73 @@ function AdminEventDetails() {
       });
 
       await loadPhotos();
+
+      if (gallery) {
+        setSuccess(
+          "Photo selection changed. Click 'Update Customer Gallery' to synchronize the gallery."
+        );
+      }
     } catch (error) {
       setError(error.message);
+    }
+  };
+
+  // ============================================
+  // UPDATE EXISTING GALLERY
+  // ============================================
+
+  const handleUpdateGallery = async () => {
+    if (!gallery) {
+      return;
+    }
+
+    const selectedCount = photos.filter(
+      (photo) => photo.selected
+    ).length;
+
+    if (selectedCount === 0) {
+      setError(
+        "Please select at least one photo before updating the gallery."
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      gallery.published
+        ? "Update the published customer gallery with the currently selected photos?"
+        : "Update the customer gallery with the currently selected photos?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setUpdatingGallery(true);
+      setError("");
+      setSuccess("");
+
+      const data = await apiRequest(
+        `/gallery/${gallery.slug}/update`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setGallery(data.gallery);
+
+      setSuccess(
+        gallery.published
+          ? "Published customer gallery updated successfully."
+          : "Customer gallery updated successfully."
+      );
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setUpdatingGallery(false);
     }
   };
 
@@ -197,7 +298,6 @@ function AdminEventDetails() {
         </div>
       </header>
 
-
       <main className="max-w-7xl mx-auto px-6 py-10">
 
         {/* ========================================
@@ -210,6 +310,15 @@ function AdminEventDetails() {
           </div>
         )}
 
+        {/* ========================================
+            SUCCESS MESSAGE
+        ======================================== */}
+
+        {success && (
+          <div className="mb-6 rounded-lg bg-green-100 border border-green-300 px-4 py-3 text-green-700">
+            {success}
+          </div>
+        )}
 
         {/* ========================================
             EVENT INFORMATION + ADD MEMBER
@@ -227,8 +336,6 @@ function AdminEventDetails() {
 
             <div className="mt-5 space-y-4">
 
-              {/* EVENT NAME */}
-
               <div>
                 <p className="text-sm text-gray-500">
                   Event Name
@@ -243,9 +350,6 @@ function AdminEventDetails() {
                 </p>
               </div>
 
-
-              {/* DESCRIPTION */}
-
               <div>
                 <p className="text-sm text-gray-500">
                   Description
@@ -255,9 +359,6 @@ function AdminEventDetails() {
                   {event.description || "No description"}
                 </p>
               </div>
-
-
-              {/* TEAM MEMBER COUNT */}
 
               <div>
                 <p className="text-sm text-gray-500">
@@ -272,7 +373,6 @@ function AdminEventDetails() {
             </div>
 
           </div>
-
 
           {/* ADD TEAM MEMBER */}
 
@@ -314,7 +414,6 @@ function AdminEventDetails() {
           </div>
 
         </div>
-
 
         {/* ========================================
             ASSIGNED TEAM MEMBERS
@@ -365,14 +464,13 @@ function AdminEventDetails() {
 
         </div>
 
-
         {/* ========================================
             UPLOADED PHOTOS
         ======================================== */}
 
         <div className="bg-white rounded-2xl shadow-sm border p-6 mt-8">
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
@@ -391,6 +489,51 @@ function AdminEventDetails() {
 
           </div>
 
+          {/* GALLERY UPDATE NOTICE */}
+
+          {gallery && (
+            <div className="mt-5 rounded-xl bg-purple-50 border border-purple-200 p-5">
+
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+                <div>
+
+                  <p className="font-semibold text-purple-900">
+                    Customer Gallery Exists
+                  </p>
+
+                  <p className="text-sm text-purple-700 mt-1">
+                    {gallery.published
+                      ? "The gallery is currently published."
+                      : "The gallery has been created but is not published yet."}
+                  </p>
+
+                  <p className="text-sm text-purple-700 mt-1">
+                    Current gallery photos:{" "}
+                    <strong>
+                      {gallery.selectedPhotoCount}
+                    </strong>
+                  </p>
+
+                </div>
+
+                <button
+                  onClick={handleUpdateGallery}
+                  disabled={
+                    updatingGallery ||
+                    galleryLoading
+                  }
+                  className="px-5 py-3 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50"
+                >
+                  {updatingGallery
+                    ? "Updating..."
+                    : "Update Customer Gallery"}
+                </button>
+
+              </div>
+
+            </div>
+          )}
 
           {/* PHOTO LOADING */}
 
@@ -425,7 +568,6 @@ function AdminEventDetails() {
                     className="w-full h-56 object-cover"
                   />
 
-
                   <div className="p-4">
 
                     {/* FILENAME */}
@@ -434,14 +576,12 @@ function AdminEventDetails() {
                       {photo.filename}
                     </p>
 
-
                     {/* UPLOADED BY */}
 
                     <p className="text-sm text-gray-500 mt-1">
                       Uploaded by:{" "}
                       {photo.uploadedBy?.name || "Unknown"}
                     </p>
-
 
                     {/* SELECT STATUS + BUTTON */}
 
