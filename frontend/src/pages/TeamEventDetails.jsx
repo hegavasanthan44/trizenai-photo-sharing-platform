@@ -78,7 +78,7 @@ function TeamEventDetails() {
       formData.append("photo", file);
 
       const response = await fetch(
-        `http://localhost:5000/api/photos/events/${id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/photos/events/${id}`,
         {
           method: "POST",
           headers: {

@@ -27,7 +27,7 @@ function TeamDashboard() {
         setError("");
 
         const response = await fetch(
-          "http://localhost:5000/api/events",
+          `${import.meta.env.VITE_API_BASE_URL}/events`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
