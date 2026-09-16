@@ -1,26 +1,44 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+console.log("API BASE URL:", API_BASE_URL);
 
 export const apiRequest = async (endpoint, options = {}) => {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
+  const url = `${API_BASE_URL}${endpoint}`;
 
-  let data;
+  console.log("API REQUEST:", url);
 
   try {
-    data = await response.json();
-  } catch {
-    throw new Error("Server returned an invalid response");
-  }
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(data.message || "Something went wrong");
-  }
+    console.log("API STATUS:", response.status);
 
-  return data;
+    const text = await response.text();
+
+    console.log("API RESPONSE:", text);
+
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(
+        `Server returned an invalid response (${response.status})`
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(data.message || "Something went wrong");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("API ERROR:", error);
+    throw error;
+  }
 };
